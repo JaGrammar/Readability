@@ -28,7 +28,7 @@ def extractFeatures(split):
     Extract the query to document features used
     as input to the neural network
     '''
-    features = []
+    features = [] #baseline features
     for i in range(2, 18):
         features.append(float(split[i].split(':')[1]))
     return features
@@ -59,7 +59,7 @@ def extractPairsOfRatedSites(y_train, Query_id):
                 break
             #Document pairs found with different rating
             if(Query_id[i][0] == Query_id[j][0] and y_train[i] != y_train[j]):
-                #将最相关的放在前面,保持文档pair中第一个doc比第二个doc与query更相关
+                
                 if(y_train[i] > y_train[j]):
                     pairs.append([i, j])
                     tmp_x0.append(X_train[i])
@@ -163,18 +163,18 @@ def train():
             if i % 10 == 0:
                 print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'.format(epoch + 1, num_epochs, i + 1, total_step, loss.item()))
 
-    torch.save(model.state_dict(), '/media/jun/ubuntu/RankNet/RankNet-master2/Data/Fold5/model.ckpt')
+    torch.save(model.state_dict(), '/RankNet/Model_Fold5/baseline_model.ckpt')
 
 def test():
     #test data
-    test_path = '/media/jun/ubuntu/RankNet/RankNet-master2/Data/Fold5/test5.txt'
-    # 超参
+    test_path = '/RankNet/Data/Fold5/test/baseline_test_fold5.txt'
+    #
     inputs = 16
     hidden_size = 10
     outputs = 1
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = RankNet(inputs, hidden_size, outputs).to(device)
-    model.load_state_dict(torch.load('/media/jun/ubuntu/RankNet/RankNet-master2/Data/Fold5/model.ckpt'))
+    model.load_state_dict(torch.load('/RankNet/Model_Fold5/baseline_model.ckpt'))
     print('Reading test data from file...')
     with open(test_path, 'r', encoding='utf-8') as f:
         features = []
@@ -230,7 +230,7 @@ def test():
 if __name__ == '__main__':
 
     #Read training data
-    X_train, y_train, Query_id = readDataset('/media/jun/ubuntu/RankNet/RankNet-master2/Data/Fold5/train5.txt')
+    X_train, y_train, Query_id = readDataset('/RankNet/Data/Fold5/training/baseline_training_fold5.txt')
     #Extract document pairs
     pairs = extractPairsOfRatedSites(y_train, Query_id)
     
