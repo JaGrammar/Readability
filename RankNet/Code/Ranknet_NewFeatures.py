@@ -1,9 +1,4 @@
-'''
-Ranknet
 
-Learning to rank using gradient descent. A simplified implementation of the 
-algorithm described in http://research.microsoft.com/en-us/um/people/cburges/papers/icml_ranking.pdf
-'''
 import torch
 import torch.utils.data as data
 import torch.nn as nn
@@ -33,7 +28,7 @@ def extractFeatures(split):
     Extract the query to document features used
     as input to the neural network
     '''
-    features = []
+    features = []#new features
     for i in range(2, 19):
         features.append(float(split[i].split(':')[1]))
     return features
@@ -75,7 +70,7 @@ def extractPairsOfRatedSites(y_train, Query_id):
                     tmp_x1.append(X_train[i])
             if(Query_id[i][0] == Query_id[j][0] and y_train[i] == y_train[j]):
                 print(i+1,j+1)
-    #array_train_x0里和array_train_x1里对应的下标元素，保持前一个元素比后一个元素更相关
+    
     array_train_x0 = np.array(tmp_x0)
     array_train_x1 = np.array(tmp_x1)
     
@@ -87,9 +82,6 @@ def extractPairsOfRatedSites(y_train, Query_id):
 class Dataset(data.Dataset):
     
     def __init__(self,path):
-        # 解析训练数据
-        #readDataset(path)
-        # pair组合
         self.datasize,self.array_train_x0,self.array_train_x1 = extractPairsOfRatedSites(y_train,Query_id)
 
     def __getitem__(self,index):
@@ -101,8 +93,6 @@ class Dataset(data.Dataset):
     def __len__(self):
         return self.datasize
 
-#path = '/media/jun/ubuntu/RankNet/RankNet-master2/Data/Fold1/newtrain5.txt'
-
 class RankNet(nn.Module):
     def __init__(self, inputs, hidden_size, outputs):
         super(RankNet, self).__init__()
@@ -110,7 +100,7 @@ class RankNet(nn.Module):
             nn.Linear(inputs, hidden_size),
             #nn.Dropout(0.5),
             nn.ReLU(inplace=True),
-            #nn.LeakyReLU(0.2,  inplace=True),#inplace为True，将会改变输入的数据 ，否则不会改变原输入，只会产生新的输出
+            #nn.LeakyReLU(0.2,  inplace=True),
             nn.Linear(hidden_size, outputs),
             #nn.Sigmoid()
             )
@@ -118,9 +108,9 @@ class RankNet(nn.Module):
     
     def forward(self, input_1, input_2):
         
-        result_1 = self.model(input_1) #预测input_1得分
-        result_2 = self.model(input_2) #预测input_2得分
-        pred = self.sigmoid(result_1-result_2) #input_1比input_2更相关概率
+        result_1 = self.model(input_1) 
+        result_2 = self.model(input_2) 
+        pred = self.sigmoid(result_1-result_2) 
         return pred
     
     def predict(self, input):
@@ -128,7 +118,7 @@ class RankNet(nn.Module):
         return result
 
 def train():
-    #Training设置参数
+    
     inputs = 17
     hidden_size = 10
     outputs = 1
@@ -137,17 +127,17 @@ def train():
     batch_size = 100
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = RankNet(inputs, hidden_size, outputs).to(device)
-    #损失函数和优化器
+    
     criterion = nn.BCELoss()
     optimizer = optim.Adadelta(model.parameters(), lr = learning_rate)
     
     datasize,array_train_x0,array_train_x1 = extractPairsOfRatedSites(y_train,Query_id)
-    #print(array_train_x0)
+    
     data1 = torch.from_numpy(array_train_x0).float()
     data2 = torch.from_numpy(array_train_x1).float()
     
     train_dataset = data.TensorDataset(data1,data2)
-    #print(train_dataset)
+    
     data_loader = data.DataLoader(dataset = train_dataset,batch_size = batch_size,shuffle = False,num_workers = 4)
 
     total_step = len(data_loader)
@@ -168,18 +158,18 @@ def train():
             if i % 10 == 0:
                 print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'.format(epoch + 1, num_epochs, i + 1, total_step, loss.item()))
 
-    torch.save(model.state_dict(), '/media/jun/ubuntu/RankNet/RankNet-master2/Data/Fold5/model.ckpt')
+    torch.save(model.state_dict(), '/RankNet/Data/Model_Fold5/new_model.ckpt')
 
 def test():
     #test data
-    test_path = '/media/jun/ubuntu/RankNet/RankNet-master2/Data/Fold5/newtest5.txt'
-    # 超参
+    test_path = '/RankNet/Data/Test/Fold5/test/new_test_fold5.txt'
+    
     inputs = 17
     hidden_size = 10
     outputs = 1
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = RankNet(inputs, hidden_size, outputs).to(device)
-    model.load_state_dict(torch.load('/media/jun/ubuntu/RankNet/RankNet-master2/Data/Fold5/model.ckpt'))
+    model.load_state_dict(torch.load('/RankNet/Data/Model_Fold5/new_model.ckpt'))
     print('Reading test data from file...')
     with open(test_path, 'r', encoding='utf-8') as f:
         features = []
@@ -201,8 +191,7 @@ def test():
     features = torch.from_numpy(features).float().to(device)
     predict_score = model.predict(features)
     results = predict_score.tolist()
-    #print(results)
-    #print(len(results[::2]))
+    
     
     test_labels1=results[::2]
     test_labels2=results[1::2]
@@ -216,7 +205,7 @@ def test():
         else:
             pre_results.append(0)
             pre_results.append(1)
-    #print(len(pre_results))
+    
     
     correct_num=[]
     for i in range(0,1000):
@@ -225,27 +214,15 @@ def test():
 
     correct_error = len(correct_num)/len(testdata_labels)
     print(correct_error)
-            
-                
     
 
-
-
-
 if __name__ == '__main__':
-
     #Read training data
-    X_train, y_train, Query_id = readDataset('/media/jun/ubuntu/RankNet/RankNet-master2/Data/Fold5/newtrain5.txt')
+    X_train, y_train, Query_id = readDataset('/RankNet/Data/Fold5/training/new_training_fold5.txt')
     #Extract document pairs
     pairs = extractPairsOfRatedSites(y_train, Query_id)
     
     train()
     test()
-    #Read testset
-    #X_train, y_train, Query_id = readDataset('/media/jun/ubuntu/RankNet/RankNet-master2/Data/Fold1/newtest5.txt')
-    #Extract document pairs
-    #pairs = extractPairsOfRatedSites(y_train, Query_id)
     
     
-    
-
