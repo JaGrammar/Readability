@@ -8,12 +8,12 @@ import matplotlib.pyplot as plt
 from sklearn.tree import plot_tree
 
 # 1. 加载数据集
-Training_dataset = pd.read_csv("/Users/jun-l/Desktop/Training_dataset.csv",encoding="UTF-8")
+Training_dataset = pd.read_csv("Training_dataset.csv",encoding="UTF-8")
 
 X_train = Training_dataset.iloc[:,2:]
 y_train = Training_dataset.iloc[:,1]
 
-Test_dataset = pd.read_csv("/Users/jun-l/Desktop/Test_dataset.csv",encoding="UTF-8")
+Test_dataset = pd.read_csv("Test_dataset.csv",encoding="UTF-8")
 X_test = Test_dataset.iloc[:,2:]
 y_test = Test_dataset.iloc[:,1]
 
